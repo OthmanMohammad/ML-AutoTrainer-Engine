@@ -2,7 +2,7 @@ import streamlit as st
 from src import data_processing, streamlit_utils
 
 def main():
-    st.title('ML AutoTrainer Engine')
+    st.title('DataQueue AutoML App')
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
