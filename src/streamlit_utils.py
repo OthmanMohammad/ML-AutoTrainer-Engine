@@ -10,6 +10,8 @@ def apply_filters(data):
     )
 
     filter_query = []
+    condition_operators = []  # store the conditions between each filter
+
     for i in range(filter_conditions):
         col = st.selectbox(f"Select column {i+1}", data.columns)
         op = st.selectbox(
@@ -28,9 +30,21 @@ def apply_filters(data):
         
         filter_query.append(f"{col} {op} {val}")
 
+        # Add a condition selector for each filter, except the last one
+        if i < filter_conditions - 1:
+            condition = st.selectbox(f"Condition between filter {i+1} and {i+2}", ["and", "or"])
+            condition_operators.append(condition)
+
     filtered_data = None
     if st.button("Apply Filters"):
-        final_query = " and ".join(filter_query)
+        # Intermingle filter_query and condition_operators to create the final query
+        final_query_parts = []
+        for i, query_part in enumerate(filter_query):
+            final_query_parts.append(query_part)
+            if i < len(condition_operators):
+                final_query_parts.append(condition_operators[i])
+        
+        final_query = " ".join(final_query_parts)
         filtered_data = data.query(final_query)
 
     return filtered_data

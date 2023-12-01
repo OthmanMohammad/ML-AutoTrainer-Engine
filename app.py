@@ -3,7 +3,7 @@ from src import data_processing
 from src import streamlit_utils
 
 def main():
-    st.title("ML AutoTrainer Enginer")
+    st.title("DataQueue AutoML App")
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
@@ -20,6 +20,5 @@ def main():
             if filtered_data is not None:
                 st.dataframe(filtered_data)
 
-# 
 if __name__ == "__main__":
     main()
