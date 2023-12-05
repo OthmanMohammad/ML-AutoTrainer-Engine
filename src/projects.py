@@ -74,3 +74,20 @@ def load_model(project_name):
     else:
         st.error("Model file not found in the project.")
         return None
+
+def save_processing_steps(project_name, steps):
+    project_folder = os.path.join(PROJECT_DATA_DIR, project_name)
+    os.makedirs(project_folder, exist_ok=True)
+    steps_path = os.path.join(project_folder, 'processing_steps.json')
+    with open(steps_path, 'w') as f:
+        json.dump(steps, f)
+
+def load_processing_steps(project_name):
+    project_folder = os.path.join(PROJECT_DATA_DIR, project_name)
+    steps_path = os.path.join(project_folder, 'processing_steps.json')
+    if os.path.exists(steps_path):
+        with open(steps_path, 'r') as f:
+            return json.load(f)
+    else:
+        # If the file doesn't exist, return an empty list or dict
+        return {}

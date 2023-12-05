@@ -1,0 +1,1 @@
+[{"step": "drop_columns", "parameters": {"columns": ["Cabin", "Embarked", "Ticket", "Parch", "SibSp", "Name", "Pclass", "PassengerId"]}}, {"step": "convert_categorical_to_numerical", "parameters": {"columns": ["Sex"]}}, {"step": "handle_missing_values", "parameters": {"strategy": "median"}}, {"step": "feature_extraction", "parameters": {"n_components": 3, "method": "PCA"}}]

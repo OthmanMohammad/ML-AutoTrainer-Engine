@@ -58,7 +58,7 @@ def apply_filters(data):
 
     return filtered_data
 
-def feature_extraction_ui(data, target_column):
+def feature_extraction_ui(data, target_column=None):
     extraction_methods = {
         "PCA": "Principal Component Analysis - Dimensionality reduction",
         "ICA": "Independent Component Analysis - Signal separation",
@@ -69,51 +69,88 @@ def feature_extraction_ui(data, target_column):
         "None": "No extraction or selection"
     }
 
-    extraction_method = st.selectbox("Select Feature Extraction Method", list(extraction_methods.keys()), format_func=lambda x: f"{x} - {extraction_methods[x]}")
+    extraction_method = st.selectbox(
+        "Select Feature Extraction Method",
+        list(extraction_methods.keys()),
+        format_func=lambda x: f"{x} - {extraction_methods[x]}"
+    )
 
     data_transformed = None
+    params = {}
 
-    if extraction_method == "PCA":
-        n_components = st.slider("Number of Principal Components", 1, data.shape[1]-1)
-    elif extraction_method == "ICA":
-        n_components = st.slider("Number of Independent Components", 1, data.shape[1]-1)
-    elif extraction_method == "LDA":
-        classes = len(data[target_column].unique())
-        if classes > 2:
-            n_components = st.slider("Number of Components for LDA", 1, min(data.shape[1], classes - 1))
+    if extraction_method != "None":
+        # Exclude target variable for transformation
+        if target_column:
+            features = data.drop(target_column, axis=1)
+            st.write(f"Dropped {target_column}. Features shape now:", features.shape)  # Debug print: After dropping target
         else:
-            st.warning("LDA requires more than 2 unique target classes.")
-    elif extraction_method == "Feature Agglomeration":
-        n_clusters = st.slider("Number of clusters for Feature Agglomeration", 1, data.shape[1]-1)
-    elif extraction_method == "SelectKBest":
-        k = st.slider("Number of top features to select", 1, data.shape[1]-1)
-    elif extraction_method == "Variance Threshold":
-        threshold = st.slider("Variance Threshold", 0.0, 1.0, 0.05, 0.01)
+            features = data
+            st.write("No target column specified. Features shape:", features.shape)  # Debug print: No target dropped
 
-    # Confirmation button
-    if st.button("Confirm Feature Extraction", key='confirm_feature_extraction_button'):
-        if extraction_method == "PCA":
-            data_transformed = apply_pca(data.drop(target_column, axis=1), n_components)
-        elif extraction_method == "ICA":
-            data_transformed = apply_ica(data.drop(target_column, axis=1), n_components)
+
+        n_features = features.shape[1]
+        min_features = 1
+
+        if extraction_method in ["PCA", "ICA", "Feature Agglomeration", "SelectKBest"]:
+            # Slider for components or features selection
+            n_components = st.slider(
+                f"Number of Components for {extraction_method}",
+                min_value=min_features, max_value=n_features, value=min(n_features // 2, min_features)
+            )
+            params['n_components'] = n_components
+
         elif extraction_method == "LDA":
-            data_transformed = apply_lda(data.drop(target_column, axis=1), data[target_column], n_components)
-        elif extraction_method == "Feature Agglomeration":
-            data_transformed = apply_feature_agglomeration(data.drop(target_column, axis=1), n_clusters)
-        elif extraction_method == "SelectKBest":
-            data_transformed = select_k_best(data.drop(target_column, axis=1), data[target_column], k)
+            if target_column is not None:
+                classes = len(data[target_column].unique())
+                n_features = min(features.shape[1], classes - 1)
+                min_features = min(n_features, 2)
+                # Slider for components or features selection for LDA
+                n_components = st.slider(
+                    f"Number of Components for {extraction_method}",
+                    min_value=min_features, max_value=n_features, value=min_features
+                )
+                params['n_components'] = n_components
+            else:
+                st.error("Please specify the target column for LDA.")
+                return None, None
+        
         elif extraction_method == "Variance Threshold":
-            data_transformed = apply_variance_threshold(data.drop(target_column, axis=1), threshold)
+            # Variance Threshold slider
+            threshold = st.slider("Variance Threshold", 0.0, 1.0, 0.05, 0.01)
+            params['threshold'] = threshold
 
-        # Transform to DataFrame and set column names
-        if data_transformed is not None:
-            data_transformed = pd.DataFrame(data_transformed)
-            data_transformed.columns = [f'Feature_{i}' for i in range(data_transformed.shape[1])]
-            return data_transformed
-        else:
-            st.warning("No feature extraction method selected or no changes applied.")
+        # Confirmation button
+        if st.button("Confirm Feature Extraction", key='confirm_feature_extraction_button'):
+            params['method'] = extraction_method  # Save the method name
 
-    return None
+            if extraction_method == "PCA":
+                data_transformed = apply_pca(features, params['n_components'])
+            elif extraction_method == "ICA":
+                data_transformed = apply_ica(features, params['n_components'])
+            elif extraction_method == "LDA" and target_column:
+                data_transformed = apply_lda(features, data[target_column], params['n_components'])
+            elif extraction_method == "Feature Agglomeration":
+                data_transformed = apply_feature_agglomeration(features, params['n_components'])
+            elif extraction_method == "SelectKBest" and target_column:
+                data_transformed = select_k_best(features, data[target_column], params['n_components'])
+            elif extraction_method == "Variance Threshold":
+                data_transformed = apply_variance_threshold(features, params['threshold'])
+
+            # Transform to DataFrame and add target column back if necessary
+            if data_transformed is not None:
+                data_transformed = pd.DataFrame(data_transformed)
+                st.write("Transformed data shape before adding target:", data_transformed.shape)  # Debug print: Transformed shape before adding target
+                if target_column:
+                    data_transformed[target_column] = data[target_column].reset_index(drop=True)
+                    st.write(f"Added {target_column} back. Final data shape:", data_transformed.shape)  # Debug print: Final shape after adding target
+                data_transformed.columns = [f'Feature_{i}' for i in range(data_transformed.shape[1] - (1 if target_column else 0))] + ([target_column] if target_column else [])
+                return data_transformed, params
+            else:
+                st.warning("No feature extraction method selected or no changes applied.")
+
+    # In case of "None" or no confirmation, return None and the empty params dictionary
+    return None, params
+
 
 def train_model_ui(data, target_column, project_name):
     # Initialize session state for the trained model, model name, and evaluation
@@ -165,7 +202,6 @@ def train_model_ui(data, target_column, project_name):
                 file_name=model_name.replace(" ", "_").lower() + ".pkl",
                 mime="application/octet-stream"
             )
-
 
 def download_model(model, model_name):
     model_file = model_name.replace(" ", "_").lower() + ".pkl"
