@@ -1,5 +1,5 @@
 import streamlit as st
-from .model_training import train_model
+from .model_training import train_model, evaluate_model
 
 def select_target_column(data):
     target_column = st.selectbox("Select Target Column", data.columns)
@@ -51,12 +51,19 @@ def apply_filters(data):
     return filtered_data
 
 def train_model_ui(data, target_column):
-    model_type = st.selectbox("Select Model Type", ["Classification", "Regression"])
+    model_type = st.selectbox("Select Model Type", ["Classification", "Regression", "Clustering"])
+
+    model_name = None
     if model_type == "Classification":
-        model_name = st.selectbox("Select Classification Algorithm", ["Logistic Regression", "Random Forest Classifier"])
+        model_name = st.selectbox("Select Classification Algorithm", ["Logistic Regression", "Random Forest Classifier", "Gradient Boosting Classifier"])
     elif model_type == "Regression":
-        model_name = st.selectbox("Select Regression Algorithm", ["Linear Regression", "Decision Tree Regressor"])
+        model_name = st.selectbox("Select Regression Algorithm", ["Linear Regression", "Decision Tree Regressor", "Gradient Boosting Regressor"])
+    elif model_type == "Clustering":
+        model_name = st.selectbox("Select Clustering Algorithm", ["KMeans Clustering"])
 
     if st.button("Train Model"):
-        return train_model(data, target_column, model_name)
+        model, X_test, y_test = train_model(data, target_column, model_name)
+        evaluation = evaluate_model(model, X_test, y_test, model_name)
+        return evaluation
+
     return None
