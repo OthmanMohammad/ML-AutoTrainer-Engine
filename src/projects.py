@@ -65,3 +65,12 @@ def save_model(project_name, model):
     os.makedirs(project_folder, exist_ok=True)
     model_path = os.path.join(project_folder, 'model.joblib')
     joblib.dump(model, model_path)
+
+def load_model(project_name):
+    project_folder = os.path.join(PROJECT_DATA_DIR, project_name)
+    model_path = os.path.join(project_folder, 'model.joblib')
+    if os.path.exists(model_path):
+        return joblib.load(model_path)
+    else:
+        st.error("Model file not found in the project.")
+        return None

@@ -79,10 +79,18 @@ def main():
                 st.dataframe(st.session_state.processed_data)
 
             with st.expander("Model Training"):
-                model, model_metrics = streamlit_utils.train_model(st.session_state.processed_data, target_column)
-                if model is not None:
-                    projects.save_model(st.session_state.selected_project, model)
-                st.json(model_metrics)
+                if 'selected_project' in st.session_state and st.session_state.selected_project:
+                    results = streamlit_utils.train_model_ui(st.session_state.processed_data, target_column, st.session_state.selected_project)
+                    if results:
+                        st.write(results)
+                        
+            with st.expander("Load Model"):
+                if st.button('Load Trained Model'):
+                    loaded_model = projects.load_model(st.session_state.selected_project)
+                    if loaded_model is not None:
+                        st.session_state.trained_model = loaded_model
+                        st.success('Model loaded successfully.')
+
 
 if __name__ == "__main__":
     main()

@@ -7,6 +7,7 @@ from .feature_extraction import (
 )
 import joblib
 import os
+from .projects import save_model 
 
 def select_target_column(data):
     target_column = st.selectbox("Select Target Column", data.columns)
@@ -114,7 +115,7 @@ def feature_extraction_ui(data, target_column):
 
     return None
 
-def train_model_ui(data, target_column):
+def train_model_ui(data, target_column, project_name):
     # Initialize session state for the trained model, model name, and evaluation
     if 'trained_model' not in st.session_state:
         st.session_state.trained_model = None
@@ -146,6 +147,8 @@ def train_model_ui(data, target_column):
         if st.button("Train Model", key="train_model_button"):
             st.session_state.trained_model, X_test, y_test = train_model(data, target_column, model_name)
             st.session_state.evaluation = evaluate_model(st.session_state.trained_model, X_test, y_test, model_name)
+            # Save the trained model into the project directory
+            save_model(project_name, st.session_state.trained_model)
         
         # Show evaluation result if available
         if st.session_state.evaluation:
@@ -162,7 +165,6 @@ def train_model_ui(data, target_column):
                 file_name=model_name.replace(" ", "_").lower() + ".pkl",
                 mime="application/octet-stream"
             )
-
 
 
 def download_model(model, model_name):
