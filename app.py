@@ -11,16 +11,25 @@ def main():
         data = data_processing.read_csv(uploaded_file)
         st.write(data.head())
 
-        # Feature to select columns to drop
-        columns_to_drop = st.multiselect(
-            'Select columns to drop', data.columns)
-        if columns_to_drop:
-            data = data_processing.drop_columns(data, columns_to_drop)
-            st.write('Updated Data after dropping columns')
-            st.write(data.head())
-
         target_column = streamlit_utils.select_target_column(data)
         st.write(f"Selected Target Column: {target_column}")
+
+        # Drop columns section
+        with st.expander("Drop Columns"):
+            columns_to_drop = st.multiselect("Select columns to drop", data.columns)
+            if st.button("Drop Selected Columns"):
+                data = data_processing.drop_columns(data, columns_to_drop)
+                st.write(data.head())
+
+        # Handle missing values section
+        with st.expander("Handle Missing Values"):
+            strategy = st.radio("Choose a strategy", ["Drop Rows", "Fill with Mean"])
+            if st.button("Apply Strategy"):
+                if strategy == "Drop Rows":
+                    data = data_processing.handle_missing_values(data, strategy="drop")
+                elif strategy == "Fill with Mean":
+                    data = data_processing.handle_missing_values(data, strategy="mean")
+                st.write(data.head())
 
         # Filtering section
         with st.expander("Filter Data"):
