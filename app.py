@@ -119,10 +119,12 @@ def main():
                         # Record the step
                         st.session_state.data_processing_recorder.record_step('model_training', target_column=target_column)
 
+
             with st.expander("Apply Saved Pipeline to New Data"):
                 new_data_file = st.file_uploader("Upload New Data CSV File", type="csv")
+                target_column = st.text_input("Enter the name of the target column (it will be excluded from processing):")
 
-                if new_data_file and 'selected_project' in st.session_state and st.session_state.selected_project:
+                if new_data_file and target_column and 'selected_project' in st.session_state and st.session_state.selected_project:
                     # Define the path to the steps file
                     steps_file_path = os.path.join('projects', st.session_state.selected_project, 'processing_steps.json')
 
@@ -137,6 +139,10 @@ def main():
 
                         # Load the new data
                         new_data = pd.read_csv(new_data_file)
+
+                        # Remove the target column before applying the pipeline
+                        if target_column in new_data.columns:
+                            new_data = new_data.drop(columns=[target_column])
 
                         # Apply each step in the pipeline
                         try:
@@ -160,11 +166,25 @@ def main():
                             st.session_state['processed_new_data_path'] = processed_new_data_path
                             st.success(f"Processed new data saved to {processed_new_data_path}")
 
+                            # Add a button to download the processed new data
+                            with open(processed_new_data_path, "rb") as f:
+                                # Read the saved processed data file
+                                processed_new_data = f.read()
+                                st.download_button(
+                                    label="Download Processed Data as CSV",
+                                    data=processed_new_data,
+                                    file_name="processed_new_data.csv",
+                                    mime="text/csv",
+                                    key='download-csv'
+                                )
+
                         except Exception as e:
                             st.error(f"An error occurred: {e}")
 
                     else:
                         st.error(f"Steps file does not exist: {steps_file_path}")
+
+
 
             with st.expander("Model Prediction"):
                 # Path to the trained model
@@ -200,7 +220,7 @@ def main():
                             preds = predictions.predict(model, data_for_prediction)
                             st.success("Predictions made successfully.")
                             
-                            # Here we don't write preds directly because we want to show them with the features
+                            # Here I am not writing preds directly because I want to show them with the features
                             combined_results = data_for_prediction.copy()
                             combined_results['Predictions'] = preds
                             st.write(combined_results.head())

@@ -74,11 +74,17 @@ class DataProcessingPipeline:
         pipeline.pipeline = pipeline_steps
         return pipeline
 
-    def apply_pipeline(self, data):
+    def apply_pipeline(self, data, target_variable=None):
+        # If target_variable is specified, remove it before applying transformations
+        if target_variable is not None and target_variable in data.columns:
+            data = data.drop(columns=[target_variable])
+
         for step_name, parameters in self.pipeline:
             if hasattr(self, step_name):
                 step_function = getattr(self, step_name)
+                # Ensure that the target variable is not passed to step functions
                 data = step_function(data, **parameters)
             else:
                 raise ValueError(f"Step '{step_name}' is not a method of DataProcessingPipeline")
+
         return data
