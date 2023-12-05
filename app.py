@@ -1,5 +1,6 @@
 import streamlit as st
-from src import data_processing, streamlit_utils
+from src import data_processing
+from src import streamlit_utils
 
 def main():
     st.title("ML AutoTrainer Enginer")
@@ -29,6 +30,14 @@ def main():
                 elif strategy == "Fill with Mean":
                     data = data_processing.handle_missing_values(data, strategy="mean")
                 st.write(data.head())
+
+        # Convert categorical columns to numerical
+        with st.expander("Convert Categorical Columns to Numerical"):
+            columns_to_convert = st.multiselect("Select columns to convert", data.columns)
+            if columns_to_convert and st.button("Convert"):
+                data = data_processing.convert_categorical_to_numerical(data, columns_to_convert)
+                st.write(data.head())
+
 
         # Filtering section
         with st.expander("Filter Data"):
