@@ -5,6 +5,8 @@ from .feature_extraction import (
     apply_pca, apply_ica, apply_lda, apply_feature_agglomeration, 
     select_k_best, apply_variance_threshold
 )
+import joblib
+import os
 
 def select_target_column(data):
     target_column = st.selectbox("Select Target Column", data.columns)
@@ -113,6 +115,14 @@ def feature_extraction_ui(data, target_column):
     return None
 
 def train_model_ui(data, target_column):
+    # Initialize session state for the trained model, model name, and evaluation
+    if 'trained_model' not in st.session_state:
+        st.session_state.trained_model = None
+    if 'trained_model_name' not in st.session_state:
+        st.session_state.trained_model_name = ""
+    if 'evaluation' not in st.session_state:
+        st.session_state.evaluation = ""
+
     # Model Type Selection
     model_type = st.selectbox("Select Model Type", ["Classification", "Regression", "Clustering"])
 
@@ -126,9 +136,36 @@ def train_model_ui(data, target_column):
     else:
         model_name = None
 
+    # If the selected model name changes, reset the trained model and evaluation
+    if st.session_state.trained_model_name != model_name:
+        st.session_state.trained_model_name = model_name
+        st.session_state.trained_model = None
+        st.session_state.evaluation = ""
+
     if model_name:
-        # Train Button with unique key
         if st.button("Train Model", key="train_model_button"):
-            model, X_test, y_test = train_model(data, target_column, model_name)
-            evaluation = evaluate_model(model, X_test, y_test, model_name)
-            return evaluation
+            st.session_state.trained_model, X_test, y_test = train_model(data, target_column, model_name)
+            st.session_state.evaluation = evaluate_model(st.session_state.trained_model, X_test, y_test, model_name)
+        
+        # Show evaluation result if available
+        if st.session_state.evaluation:
+            st.write(st.session_state.evaluation)
+
+        # Adding a button for downloading the trained model
+        if st.session_state.trained_model:
+            model_file_path = download_model(st.session_state.trained_model, model_name)
+            with open(model_file_path, "rb") as f:
+                bytes_data = f.read()
+            st.download_button(
+                label=f"Download {model_name}",
+                data=bytes_data,
+                file_name=model_name.replace(" ", "_").lower() + ".pkl",
+                mime="application/octet-stream"
+            )
+
+
+
+def download_model(model, model_name):
+    model_file = model_name.replace(" ", "_").lower() + ".pkl"
+    joblib.dump(model, model_file)
+    return model_file
