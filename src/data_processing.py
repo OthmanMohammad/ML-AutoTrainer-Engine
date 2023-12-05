@@ -11,6 +11,11 @@ def handle_missing_values(data, strategy="drop"):
         return data.dropna()
     elif strategy == "mean":
         return data.fillna(data.mean())
+    elif strategy == "median":
+        return data.fillna(data.median())
+    elif strategy == "mode":
+        # Assuming mode to be the first one
+        return data.fillna(data.mode().iloc[0])
     else:
         raise ValueError(f"Unsupported strategy: {strategy}")
 
