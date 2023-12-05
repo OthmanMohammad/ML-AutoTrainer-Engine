@@ -53,12 +53,16 @@ class DataProcessingPipeline:
             data_transformed = apply_pca(data, n_components=n_components)
         elif method == 'ICA':
             data_transformed = apply_ica(data, n_components=n_components)
-        # Note: Other methods need to be implemented
         else:
             raise ValueError(f"Unsupported feature extraction method: {method}")
 
+        # generate feature names based on the number of components
+        feature_names = [f"Feature_{i}" for i in range(n_components)]
+        
+        data_transformed_df = pd.DataFrame(data_transformed, columns=feature_names)
+
         self.pipeline.append(('feature_extraction', {'n_components': n_components, 'method': method}))
-        return pd.DataFrame(data_transformed)
+        return data_transformed_df
 
     def save_pipeline(self, file_name):
         joblib.dump(self.pipeline, file_name)

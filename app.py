@@ -1,5 +1,5 @@
 import streamlit as st
-from src import data_processing, streamlit_utils, projects
+from src import data_processing, streamlit_utils, projects, predictions
 from src.data_recorder import DataProcessingRecorder
 import pandas as pd
 from src.data_processing_pipeline import DataProcessingPipeline
@@ -153,11 +153,72 @@ def main():
 
                             st.success('Pipeline applied successfully.')
                             st.write(new_data.head())
+
+                            # Save the processed new data to a file
+                            processed_new_data_path = os.path.join('projects', st.session_state.selected_project, 'processed_new_data.csv')
+                            new_data.to_csv(processed_new_data_path, index=False)
+                            st.session_state['processed_new_data_path'] = processed_new_data_path
+                            st.success(f"Processed new data saved to {processed_new_data_path}")
+
                         except Exception as e:
                             st.error(f"An error occurred: {e}")
 
                     else:
                         st.error(f"Steps file does not exist: {steps_file_path}")
+
+            with st.expander("Model Prediction"):
+                # Path to the trained model
+                model_path = os.path.join('projects', st.session_state.selected_project, 'model.joblib')
+                # Path where the predictions should be saved
+                predictions_path = os.path.join('projects', st.session_state.selected_project, 'predictions.csv')
+
+                # Load the model
+                try:
+                    model = predictions.load_model(model_path)
+                    st.success("Model loaded successfully.")
+                except Exception as e:
+                    st.error(f"An error occurred while loading the model: {e}")
+                    model = None
+
+                # Load the processed data for predictions
+                if 'processed_new_data_path' in st.session_state:
+                    try:
+                        data_for_prediction = pd.read_csv(st.session_state['processed_new_data_path'])
+                        st.write("Data for prediction loaded successfully.")
+                        st.write(data_for_prediction.head())
+                    except Exception as e:
+                        st.error(f"An error occurred while loading the data for prediction: {e}")
+                        data_for_prediction = None
+                else:
+                    st.warning("No processed data available for predictions. Please apply the pipeline to new data first.")
+                    data_for_prediction = None
+
+                # Make predictions and save results
+                if model and data_for_prediction is not None:
+                    if st.button("Make Predictions"):
+                        try:
+                            preds = predictions.predict(model, data_for_prediction)
+                            st.success("Predictions made successfully.")
+                            
+                            # Here we don't write preds directly because we want to show them with the features
+                            combined_results = data_for_prediction.copy()
+                            combined_results['Predictions'] = preds
+                            st.write(combined_results.head())
+
+                            # Save the predictions along with the features
+                            if predictions.save_predictions(data_for_prediction, preds, predictions_path):
+                                st.success(f"Predictions saved to {predictions_path}")
+                                
+                                # Create a link to download the predictions CSV
+                                with open(predictions_path, "rb") as file:
+                                    btn = st.download_button(
+                                        label="Download Predictions CSV",
+                                        data=file,
+                                        file_name="predictions.csv",
+                                        mime="text/csv",
+                                    )
+                        except Exception as e:
+                            st.error(f"An error occurred while making predictions: {e}")
 
                         
             # Save the processing steps to the project after each interaction
