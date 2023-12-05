@@ -1,9 +1,8 @@
 import streamlit as st
-from src import data_processing
-from src import streamlit_utils
+from src import data_processing, streamlit_utils
 
 def main():
-    st.title("DataQueue AutoML App")
+    st.title("ML AutoTrainer Enginer")
 
     uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
@@ -19,6 +18,12 @@ def main():
             filtered_data = streamlit_utils.apply_filters(data)
             if filtered_data is not None:
                 st.dataframe(filtered_data)
+
+        # Model training section
+        with st.expander("Model Training"):
+            results = streamlit_utils.train_model_ui(filtered_data or data, target_column)
+            if results:
+                st.write(results)
 
 if __name__ == "__main__":
     main()
