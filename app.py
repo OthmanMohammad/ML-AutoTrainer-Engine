@@ -40,6 +40,14 @@ def main():
             if columns_to_convert and st.button("Convert"):
                 st.session_state.processed_data = data_processing.convert_categorical_to_numerical(st.session_state.processed_data, columns_to_convert)
                 st.write(st.session_state.processed_data.head())
+        
+        # Feature extraction section
+        with st.expander("Feature Extraction"):
+            extracted_data = streamlit_utils.feature_extraction_ui(st.session_state.processed_data, target_column)
+            if extracted_data is not None:
+                st.session_state.processed_data = extracted_data
+            st.dataframe(st.session_state.processed_data)
+
 
         # Filtering section
         with st.expander("Filter Data"):
@@ -52,6 +60,9 @@ def main():
             results = streamlit_utils.train_model_ui(st.session_state.processed_data, target_column)
             if results:
                 st.write(results)
+
+
+
 
 if __name__ == "__main__":
     main()

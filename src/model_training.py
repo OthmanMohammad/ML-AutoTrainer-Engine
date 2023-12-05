@@ -19,7 +19,7 @@ def initialize_model(model_name):
     elif model_name == "Gradient Boosting Regressor":
         return GradientBoostingRegressor()
     elif model_name == "KMeans Clustering":
-        return KMeans(n_clusters=3)  # Default value for this example
+        return KMeans(n_clusters=3)  # Default value
 
 def train_model(data, target_column, model_name):
     X_train, X_test, y_train, y_test = train_test_split(data.drop(target_column, axis=1), data[target_column])
