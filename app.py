@@ -1,6 +1,5 @@
 import streamlit as st
-from src import data_processing
-from src import streamlit_utils
+from src import data_processing, streamlit_utils
 
 def main():
     st.title("ML AutoTrainer Enginer")
